@@ -1,6 +1,6 @@
 import { Octokit } from "npm:@octokit/rest@19.0.7";
 
-type ActionsClient = InstanceType<typeof Octokit>["rest"]["actions"]
+type ActionsClient = InstanceType<typeof Octokit>["rest"]["actions"];
 
 type WorkflowRun = Awaited<
   ReturnType<ActionsClient["listWorkflowRuns"]>
@@ -8,16 +8,20 @@ type WorkflowRun = Awaited<
 
 export class ActionsService {
   private octokit: Octokit;
-  constructor(githubToken: string, private owner: string, private repo: string) {
-    this.octokit = new Octokit({ auth: githubToken })
+  constructor(
+    githubToken: string,
+    private owner: string,
+    private repo: string,
+  ) {
+    this.octokit = new Octokit({ auth: githubToken });
   }
 
   async workflows() {
     const resp = await this.octokit.rest.actions.listRepoWorkflows({
       owner: this.owner,
       repo: this.repo,
-    })
-    return resp.data.workflows
+    });
+    return resp.data.workflows;
   }
 
   async workflowRunsFor(workflow_id: string | number) {
@@ -28,7 +32,7 @@ export class ActionsService {
       per_page: 100, // TODO: いい感じの値にする？
     })).data.workflow_runs;
 
-    return await Promise.all(runs.map((run) => this.attachJobsTo(run)))
+    return await Promise.all(runs.map((run) => this.attachJobsTo(run)));
   }
 
   private async attachJobsTo(run: WorkflowRun) {
@@ -41,6 +45,6 @@ export class ActionsService {
     return {
       ...run,
       jobs,
-    }
+    };
   }
 }
