@@ -2,9 +2,19 @@ import { Octokit } from "npm:@octokit/rest@19.0.7";
 
 type ActionsClient = InstanceType<typeof Octokit>["rest"]["actions"];
 
-type WorkflowRun = Awaited<
+export type Workflow = Awaited<
+  ReturnType<ActionsClient["listRepoWorkflows"]>
+>["data"]["workflows"][0];
+
+export type WorkflowRun = Awaited<
   ReturnType<ActionsClient["listWorkflowRuns"]>
 >["data"]["workflow_runs"][0];
+
+export type Job = Awaited<
+  ReturnType<ActionsClient["listJobsForWorkflowRun"]>
+>["data"]["jobs"][0];
+
+export type Step = Exclude<Job["steps"], undefined>[0];
 
 export class ActionsService {
   private octokit: Octokit;
@@ -16,7 +26,7 @@ export class ActionsService {
     this.octokit = new Octokit({ auth: githubToken });
   }
 
-  async workflows() {
+  async workflows(): Promise<Workflow[]> {
     const resp = await this.octokit.rest.actions.listRepoWorkflows({
       owner: this.owner,
       repo: this.repo,
@@ -35,7 +45,9 @@ export class ActionsService {
     return await Promise.all(runs.map((run) => this.attachJobsTo(run)));
   }
 
-  private async attachJobsTo(run: WorkflowRun) {
+  private async attachJobsTo(
+    run: WorkflowRun,
+  ): Promise<WorkflowRun & { jobs: Job[] }> {
     const jobs = (await this.octokit.rest.actions.listJobsForWorkflowRun({
       owner: this.owner,
       repo: this.repo,
